@@ -11,12 +11,15 @@ import asyncio
 import random
 import time
 
+
 async def create_tables():
+    """ Удаление и создание таблиц. """
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
 
+""" Декоратор для получения сессий. """
 def get_session(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
@@ -35,6 +38,10 @@ async def get_all_users_dto(
     limit: Optional[int] = None,
     page: Optional[int] = None
 ) -> List[UsersSchemaDTO]:
+    """
+    SELECT * FROM users
+    LIMIT limit OFFSET offset;
+    """
     limit = None if page is None else limit
     offset = None if page is None or limit is None else (page) * limit
     query = (
@@ -42,7 +49,9 @@ async def get_all_users_dto(
         .limit(limit)
         .offset(offset)
     )
+    # Выполняем запрос
     result = await session.scalars(query)
+    # Преобразуем результат в список из словарей
     result_dto = [UsersSchemaDTO.model_validate(row, from_attributes=True) for row in result]
     return result_dto
 
@@ -58,6 +67,10 @@ async def get_users_pagination_db(
     limit: Optional[int] = None,
     page: Optional[int] = None
 ) -> List[UsersSchemaDTO]:
+    """
+    SELECT * FROM users
+    LIMIT limit OFFSET offset;
+    """
     result =  await get_all_users_dto(session, limit=limit, page=page)
     return result
 
@@ -66,18 +79,36 @@ async def add_user_db(
     user_name: str,
     session: AsyncSession = None
 ) -> List[UsersSchemaDTO]:
+    """
+    INSERT INTO users (name)
+    VALUES (user_name);
+
+    Т.к. есть функция get_all_users_dto,
+    то выполнится ещё этот код:
+
+    SELECT * FROM users;
+    """
     user = UsersORM(name=user_name)
     session.add(user)
     await session.commit()
-    return await get_all_users_dto(session)
-
+    result = await get_all_users_dto(session)
+    return result
 
 @get_session
 async def add_all_users_db(
     user_names: List[str],
     session: AsyncSession = None
 ) -> List[UsersSchemaDTO]:
-    
+    """
+    INSERT INTO users (name) 
+    VALUES 
+        ('user_name_1'),
+        ('user_name_2'),
+        ('user_name_3'),
+        ...;
+
+    SELECT * FROM users;
+    """
     users_list = [UsersORM(name=user_name) for user_name in user_names]
     session.add_all(users_list)
     await session.commit()
@@ -90,7 +121,12 @@ async def delete_user_db(
     id: int,
     session: AsyncSession = None
 ) -> List[UsersSchemaDTO]:
-    
+    """
+    DELETE FROM users
+    WHERE id = id;
+
+    SELECT * FROM users;
+    """
     user = await session.get(UsersORM, id)
     if user:
         await session.delete(user)
@@ -102,6 +138,7 @@ async def delete_user_db(
 
 
 async def main():
+    """ Ну тасочки создаём крч. Тестить удобней """
     create_tables_task = asyncio.create_task(create_tables())
     await create_tables_task
     add_all_users_task = asyncio.create_task(add_all_users_db(["Misha", "Leva", "Nekit", "Ivan", "Grisha"]))
