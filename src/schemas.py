@@ -5,7 +5,8 @@ from datetime import datetime
 
 
 class UsersPostScemaDTO(BaseModel):
-    name: Annotated[str, Field(min_length=3, max_length=16)]
+    username: Annotated[str, Field(min_length=3, max_length=16)]
+    password: Annotated[str, Field(min_length=8, max_length=64)]
 
 
 class UsersSchemaDTO(UsersPostScemaDTO):

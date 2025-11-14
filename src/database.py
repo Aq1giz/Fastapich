@@ -76,11 +76,12 @@ async def get_users_pagination_db(
 
 @get_session
 async def add_user_db(
-    user_name: str,
+    username: str,
+    password: str,
     session: AsyncSession = None
 ) -> List[UsersSchemaDTO]:
     """
-    INSERT INTO users (name)
+    INSERT INTO users (username)
     VALUES (user_name);
 
     Т.к. есть функция get_all_users_dto,
@@ -88,7 +89,7 @@ async def add_user_db(
 
     SELECT * FROM users;
     """
-    user = UsersORM(name=user_name)
+    user = UsersORM(username=username, password=password)
     session.add(user)
     await session.commit()
     result = await get_all_users_dto(session)
@@ -96,11 +97,12 @@ async def add_user_db(
 
 @get_session
 async def add_all_users_db(
-    user_names: List[str],
+    usernames: List[str],
+    passwords: List[str],
     session: AsyncSession = None
 ) -> List[UsersSchemaDTO]:
     """
-    INSERT INTO users (name) 
+    INSERT INTO users (username) 
     VALUES 
         ('user_name_1'),
         ('user_name_2'),
@@ -109,7 +111,7 @@ async def add_all_users_db(
 
     SELECT * FROM users;
     """
-    users_list = [UsersORM(name=user_name) for user_name in user_names]
+    users_list = [UsersORM(username=username, password=password) for username, password in zip(usernames, passwords)]
     session.add_all(users_list)
     await session.commit()
     result = await get_all_users_dto(session)
@@ -141,7 +143,11 @@ async def main():
     """ Ну тасочки создаём крч. Тестить удобней """
     create_tables_task = asyncio.create_task(create_tables())
     await create_tables_task
-    add_all_users_task = asyncio.create_task(add_all_users_db(["Misha", "Leva", "Nekit", "Ivan", "Grisha"]))
+    add_all_users_task = asyncio.create_task(add_all_users_db(
+            usernames=["Misha", "Leva", "Nekit", "Ivan", "Grisha"],
+            passwords=["qwerty123", "123432111", "34596382", "fsjiedof", "324dfd32"]
+        )
+    )
     get_all_users_task = asyncio.create_task(get_users_pagination_db())
     await add_all_users_task
 
