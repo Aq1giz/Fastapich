@@ -33,7 +33,10 @@ async def get_user(pagination: PaginationDep) -> List[dict]:
 )
 async def add_user(user: UsersPostScemaDTO) -> List[dict]:
     try:
-        result = await add_user_db(user_name=user.name)
+        result = await add_user_db(
+            username=user.username,
+            password=user.password
+        )
         return [user.model_dump() for user in result]
     except Exception as ex_:
         raise HTTPException(
