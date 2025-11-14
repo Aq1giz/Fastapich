@@ -1,6 +1,6 @@
 from sqlalchemy.orm import InspectionAttrExtensionType
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, ScalarResult
+from sqlalchemy import select, update, ScalarResult
 from functools import wraps
 from base import session_fabric, engine
 from models import Base, UsersORM
@@ -137,19 +137,39 @@ async def delete_user_db(
         return result
     else:
         raise ValueError("There is no such ID")
+    
+
+@get_session
+async def update_user_db(
+    user_id: int,
+    new_username: str,
+    session: AsyncSession = None
+) -> List[UsersSchemaDTO]:
+    """
+    UPDATE users
+    SET username = 'Aksjdfsjf', password = 'ksalsadsfk'
+    WHERE id=id;
+    """
+    user = await session.get(UsersORM, user_id)
+    if user:
+        user.username = new_username
+        await session.commit()
+        result = await get_all_users_dto(session)
+        return result
+    else:
+        raise ValueError("There is no such ID")
 
 
 async def main():
-    """ Ну тасочки создаём крч. Тестить удобней """
     create_tables_task = asyncio.create_task(create_tables())
     await create_tables_task
     add_all_users_task = asyncio.create_task(add_all_users_db(
             usernames=["Misha", "Leva", "Nekit", "Ivan", "Grisha"],
-            passwords=["qwerty123", "123432111", "34596382", "fsjiedof", "324dfd32"]
-        )
-    )
+            passwords=["qwerty123", "123432111", "34596382", "fsjiedof", "324dfd32"]))
+    update_user_task = asyncio.create_task(update_user_db(user_id=3, new_username="Fsflajskf"))
     get_all_users_task = asyncio.create_task(get_users_pagination_db())
     await add_all_users_task
+    await update_user_task
 
     all_users = await get_all_users_task
     print(all_users)
