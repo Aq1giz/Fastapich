@@ -1,15 +1,11 @@
-from sqlalchemy.orm import InspectionAttrExtensionType
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, ScalarResult
+from sqlalchemy import select
 from functools import wraps
-from base import session_fabric, engine
-from models import Base, UsersORM
-from schemas import UsersSchemaDTO
 from typing import List, Optional
-
 import asyncio
-import random
-import time
+
+from . import Base, engine, session_fabric
+from .. import UsersSchemaDTO, UsersORM
 
 
 async def create_tables():
@@ -48,12 +44,33 @@ async def get_all_users_dto(
         select(UsersORM)
         .limit(limit)
         .offset(offset)
+        .order_by(UsersORM.id)
     )
     # Выполняем запрос
     result = await session.scalars(query)
     # Преобразуем результат в список из словарей
     result_dto = [UsersSchemaDTO.model_validate(row, from_attributes=True) for row in result]
+    print(f"-----------{result_dto}")
     return result_dto
+
+
+async def get_user_by_id(
+    session: AsyncSession,
+    user_id: int
+) -> List[UsersSchemaDTO]:
+    """
+    SELECT * FROM users
+    WHERE id = user_id;
+    """
+    query = (
+        select(UsersORM)
+        .where(UsersORM.id == user_id)
+    )
+    result = await session.scalar(query)
+    result_dto = [UsersSchemaDTO.model_validate(result, from_attributes=True)]
+    print(f"-----------{result_dto}")
+    return result_dto
+
 
 
 @get_session
@@ -151,13 +168,16 @@ async def update_user_db(
     WHERE id=id;
     """
     user = await session.get(UsersORM, user_id)
-    if user:
+
+    if not user:
+        raise ValueError("There is no such ID")
+    elif user.username == new_username:
+        return user
+    else:
         user.username = new_username
         await session.commit()
-        result = await get_all_users_dto(session)
+        result = await get_user_by_id(session, user_id=user_id)
         return result
-    else:
-        raise ValueError("There is no such ID")
 
 
 async def main():
@@ -167,10 +187,10 @@ async def main():
             usernames=["Misha", "Leva", "Nekit", "Ivan", "Grisha"],
             passwords=["qwerty123", "123432111", "34596382", "fsjiedof", "324dfd32"]))
     update_user_task = asyncio.create_task(update_user_db(user_id=3, new_username="Fsflajskf"))
-    get_all_users_task = asyncio.create_task(get_users_pagination_db())
     await add_all_users_task
     await update_user_task
 
+    get_all_users_task = asyncio.create_task(get_users_pagination_db())
     all_users = await get_all_users_task
     print(all_users)
 

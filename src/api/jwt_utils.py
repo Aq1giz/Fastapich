@@ -11,7 +11,7 @@ def create_jwt_token(token_payload: dict):
         payload=token_payload,
         algorithm="HS256",
         key=SECRET_KEY
-    )
+        )
     return token
 
 

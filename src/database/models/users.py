@@ -3,7 +3,7 @@ from sqlalchemy import String
 from typing import Annotated
 import datetime
 
-from base import Base
+from .. import Base
 
 
 intpk = Annotated[int, mapped_column(autoincrement=True, primary_key=True)]
