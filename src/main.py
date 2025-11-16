@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
+from fastapi.security import 
 from api.routers import crud
 from api.database import database
 
@@ -7,8 +8,15 @@ import uvicorn
 
 app = FastAPI()
 
-
 app.include_router(crud.router)
+
+
+@app.get("/")
+def default_endpoint(response: Response):
+    return {
+        "message": "OK",
+        "status_code": response.status_code
+    }
 
 async def main():
     create_tables_task = asyncio.create_task(database.create_tables())
