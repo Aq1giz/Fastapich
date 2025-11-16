@@ -2,10 +2,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from functools import wraps
 from typing import List, Optional
+from .. import UsersSchemaDTO
+from .models.users import UsersORM
 import asyncio
 
 from . import Base, engine, session_fabric
-from .. import UsersSchemaDTO, UsersORM
 
 
 async def create_tables():

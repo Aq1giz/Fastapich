@@ -1,14 +1,22 @@
-from fastapi import Query, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from typing import List
-import uvicorn
-import asyncio
 
-from main import app
+from .. import PaginationDep
+from .. import UsersPostScemaDTO
+from .. import UsersSchemaDTO
+from ..database import get_users_pagination_db
+from ..database import add_user_db
+from ..database import delete_user_db
+from ..database import update_user_db
 
-@app.get(
-    path="/crud-users",
+
+router = APIRouter(
+    tags=["CRUD"],
+)
+
+@router.get(
     description="Get all users",
-    tags=["USERS"]
+    path="/crud-users"
 )
 async def get_user(pagination: PaginationDep) -> List[dict]:
     try:
@@ -21,10 +29,9 @@ async def get_user(pagination: PaginationDep) -> List[dict]:
         )
 
 
-@app.post(
-    path="/crud-users",
+@router.post(
     description="Add new user",
-    tags=["USERS"]
+    path="/crud-users"
 )
 async def add_user(user: UsersPostScemaDTO) -> List[dict]:
     try:
@@ -40,10 +47,9 @@ async def add_user(user: UsersPostScemaDTO) -> List[dict]:
         )
 
 
-@app.delete( 
-    path="/crud-users",
+@router.delete(
     description="Delete user by ID",
-    tags=["USERS"]
+    path="/crud-users"
 )
 async def delete_user(user_id: int):
     try:
@@ -56,10 +62,9 @@ async def delete_user(user_id: int):
         )
     
 
-@app.put(
-    path="/crud-users",
+@router.put(
     description="Update user by ID",
-    tags=["USERS"]
+    path="/crud-users"
 )
 async def update_user(
     user: UsersPostScemaDTO,
