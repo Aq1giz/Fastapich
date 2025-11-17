@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, status
 from typing import List
 
 from .. import PaginationDep
-from .. import UsersPostScemaDTO
+from .. import UsersPostSchema
 from .. import UsersSchemaDTO
 from ..database import get_users_pagination_db
 from ..database import add_user_db
@@ -33,7 +33,7 @@ async def get_user(pagination: PaginationDep) -> List[dict]:
     description="Add new user",
     path="/crud-users"
 )
-async def add_user(user: UsersPostScemaDTO) -> List[dict]:
+async def add_user(user: UsersPostSchema) -> List[dict]:
     try:
         result = await add_user_db(
             username=user.username,
@@ -67,7 +67,7 @@ async def delete_user(user_id: int):
     path="/crud-users"
 )
 async def update_user(
-    user: UsersPostScemaDTO,
+    user: UsersPostSchema,
     user_id: int
 ) -> List[UsersSchemaDTO]:
     try:
