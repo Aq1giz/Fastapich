@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Response
-from fastapi.security import 
-from api.routers import crud
+from api.routers import crud, users
 from api.database import database
 
 import asyncio
@@ -9,6 +8,7 @@ import uvicorn
 app = FastAPI()
 
 app.include_router(crud.router)
+app.include_router(users.router)
 
 
 @app.get("/")
