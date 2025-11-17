@@ -4,22 +4,28 @@ import datetime
 SECRET_KEY = "very-very-seret-key"
 
 
-def create_jwt_token(token_payload: dict):
-    expiration_time = datetime.datetime.now(datetime.UTC) + datetime.timedelta(hours=1)
-    token_payload["exp"] = expiration_time
+def create_jwt_token(
+    token_payload: dict,
+    algorithm: str= "HS256",
+    key: str = SECRET_KEY    
+):
     token = jwt.encode(
         payload=token_payload,
-        algorithm="HS256",
-        key=SECRET_KEY
-        )
+        algorithm=algorithm,
+        key=key,
+    )
     return token
 
 
-def decode_jwt_token(token: str):
+def decode_jwt_token(
+    token: str | bytes,
+    algorithms=["HS256"],
+    key=SECRET_KEY
+):
     jwt_data = jwt.decode(
         jwt=token,
-        algorithms="HS256",
-        key=SECRET_KEY
+        algorithms=algorithms,
+        key=key,
     )
     return jwt_data
 
