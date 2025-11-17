@@ -4,13 +4,16 @@ from typing import Optional, Annotated
 from datetime import datetime
 
 
-class UsersPostScemaDTO(BaseModel):
+class UsersPostSchema(BaseModel):
     username: Annotated[str, Field(min_length=3, max_length=16)]
     password: Annotated[str, Field(min_length=8, max_length=64)]
 
 
-class UsersSchemaDTO(UsersPostScemaDTO):
+class UsersGetSchema(UsersPostSchema):
     id: int 
+
+
+class UsersSchemaDTO(UsersGetSchema):
     created_at: datetime
     updated_at: datetime
 
@@ -22,6 +25,6 @@ class PaginationParams(BaseModel):
 
 if __name__ == "__main__":
     try: 
-        user = UsersPostScemaDTO(id=1, name="ds")
+        user = UsersPostSchema(id=1, name="ds")
     except ValidationError as e:
         print(e.errors())
