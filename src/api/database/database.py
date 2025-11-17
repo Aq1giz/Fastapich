@@ -24,16 +24,16 @@ def get_session(func):
             try:
                 result = await func(*args, session=session, **kwargs)
                 return result
-            except ValueError as v_:
+            except Exception as ex:
                 await session.rollback()
-                raise ValueError(v_)
+                raise ValueError(str(ex))
     return wrapper
 
 
 async def get_all_users_dto(
     session: AsyncSession,
     limit: Optional[int] = None,
-    page: Optional[int] = None
+    page: Optional[int] = None,
 ) -> List[UsersSchemaDTO]:
     """
     SELECT * FROM users
@@ -51,14 +51,14 @@ async def get_all_users_dto(
     result = await session.scalars(query)
     # Преобразуем результат в список из словарей
     result_dto = [UsersSchemaDTO.model_validate(row, from_attributes=True) for row in result]
-    print(f"-----------{result_dto}")
     return result_dto
 
 
+@get_session
 async def get_user_by_id(
+    user_id: int,
     session: AsyncSession,
-    user_id: int
-) -> List[UsersSchemaDTO]:
+) -> UsersSchemaDTO:
     """
     SELECT * FROM users
     WHERE id = user_id;
@@ -67,16 +67,19 @@ async def get_user_by_id(
         select(UsersORM)
         .where(UsersORM.id == user_id)
     )
-    result = await session.scalar(query)
-    result_dto = [UsersSchemaDTO.model_validate(result, from_attributes=True)]
-    print(f"-----------{result_dto}")
+    result = await session.execute(query)
+    result = result.one()
+    result_dto = [UsersSchemaDTO.model_validate(row, from_attributes=True) for row in result]
     return result_dto
 
 
 
-@get_session
-async def get_user_id():
-    pass
+# @get_session
+# async def get_last_user_id(
+#     session: AsyncSession
+# ):
+#     id_list = await session.scalars(select(UsersORM.id))
+#     return id_list[-1]
 
 
 @get_session
@@ -97,7 +100,7 @@ async def add_user_db(
     username: str,
     password: str,
     session: AsyncSession = None
-) -> List[UsersSchemaDTO]:
+) -> UsersORM:
     """
     INSERT INTO users (username)
     VALUES (user_name);
@@ -110,8 +113,7 @@ async def add_user_db(
     user = UsersORM(username=username, password=password)
     session.add(user)
     await session.commit()
-    result = await get_all_users_dto(session)
-    return result
+    return user
 
 @get_session
 async def add_all_users_db(
@@ -177,7 +179,7 @@ async def update_user_db(
     else:
         user.username = new_username
         await session.commit()
-        result = await get_user_by_id(session, user_id=user_id)
+        result = await get_user_by_id(user_id)
         return result
 
 
@@ -196,5 +198,6 @@ async def main():
     print(all_users)
 
 
+    
 if __name__ == "__main__":
     asyncio.run(main())
