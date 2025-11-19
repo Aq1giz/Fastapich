@@ -6,7 +6,7 @@ from datetime import datetime
 
 class UsersPostSchema(BaseModel):
     username: Annotated[str, Field(min_length=3, max_length=16)]
-    password: Annotated[str, Field(min_length=8, max_length=64)]
+    password: Annotated[bytes, Field(min_length=8, max_length=64)]
 
 
 class UsersGetSchema(UsersPostSchema):
@@ -14,6 +14,7 @@ class UsersGetSchema(UsersPostSchema):
 
 
 class UsersSchemaDTO(UsersGetSchema):
+    hash_salt: bytes
     created_at: datetime
     updated_at: datetime
 

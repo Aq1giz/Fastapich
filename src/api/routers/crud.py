@@ -8,6 +8,7 @@ from ..database import get_users_pagination_db
 from ..database import add_user_db
 from ..database import delete_user_db
 from ..database import update_user_db
+from ..utils import get_hashed_password_and_salt
 
 
 router = APIRouter(
@@ -35,11 +36,13 @@ async def get_user(pagination: PaginationDep) -> List[dict]:
 )
 async def add_user(user: UsersPostSchema) -> List[dict]:
     try:
+        hashed_password, salt = get_hashed_password_and_salt(user.password)
         result = await add_user_db(
             username=user.username,
-            password=user.password
+            password=hashed_password,
+            salt=salt,
         )
-        return [user.model_dump() for user in result]
+        return [user.model_dump(mode='json') for user in result]
     except ValueError as v_:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

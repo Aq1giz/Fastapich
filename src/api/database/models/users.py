@@ -18,6 +18,7 @@ class UsersORM(Base):
 
     id: Mapped[intpk]
     username: Mapped[str_16]
-    password: Mapped[str] = mapped_column(String(64), nullable=False)
+    password: Mapped[bytes]
+    hash_salt: Mapped[bytes]
     created_at: Mapped[created_at]
     updated_at: Mapped[updated_at]
