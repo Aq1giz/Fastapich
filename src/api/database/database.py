@@ -20,12 +20,12 @@ async def create_tables():
 def get_session(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
-        async with session_fabric() as session:
+        async with session_fabric() as db_session:
             try:
-                result = await func(*args, session=session, **kwargs)
+                result = await func(*args, session=db_session, **kwargs)
                 return result
             except Exception as ex:
-                await session.rollback()
+                await db_session.rollback()
                 raise ValueError(str(ex))
     return wrapper
 
@@ -68,9 +68,12 @@ async def get_user_by_id(
         .where(UsersORM.id == user_id)
     )
     result = await session.execute(query)
-    result = result.one()
-    result_dto = [UsersSchemaDTO.model_validate(row, from_attributes=True) for row in result]
-    return result_dto
+    row = result.scalar_one_or_none()
+
+    if not row:
+        return None
+
+    return UsersSchemaDTO.model_validate(row, from_attributes=True)
 
 
 
@@ -98,7 +101,8 @@ async def get_users_pagination_db(
 @get_session
 async def add_user_db(
     username: str,
-    password: str,
+    password: bytes,
+    hash_salt: bytes,
     session: AsyncSession = None
 ) -> UsersORM:
     """
@@ -110,15 +114,21 @@ async def add_user_db(
 
     SELECT * FROM users;
     """
-    user = UsersORM(username=username, password=password)
+    user = UsersORM(
+        username=username,
+        password=password,
+        hash_salt=hash_salt
+    )
     session.add(user)
     await session.commit()
-    return user
+    result = await get_user_by_id(user.id)
+    return result
 
 @get_session
 async def add_all_users_db(
     usernames: List[str],
-    passwords: List[str],
+    passwords: List[bytes],
+    salt: List[bytes],
     session: AsyncSession = None
 ) -> List[UsersSchemaDTO]:
     """
@@ -131,7 +141,7 @@ async def add_all_users_db(
 
     SELECT * FROM users;
     """
-    users_list = [UsersORM(username=username, password=password) for username, password in zip(usernames, passwords)]
+    users_list = [UsersORM(username=username, password=password, hash_salt=salt) for username, password, salt in zip(usernames, passwords, salt)]
     session.add_all(users_list)
     await session.commit()
     result = await get_all_users_dto(session)
@@ -188,7 +198,10 @@ async def main():
     await create_tables_task
     add_all_users_task = asyncio.create_task(add_all_users_db(
             usernames=["Misha", "Leva", "Nekit", "Ivan", "Grisha"],
-            passwords=["qwerty123", "123432111", "34596382", "fsjiedof", "324dfd32"]))
+            passwords=[bytes(i) for i in range(["qwerty123", "123432111", "34596382", "fsjiedof", "324dfd32"])],
+            salt="",
+        )
+    )
     update_user_task = asyncio.create_task(update_user_db(user_id=3, new_username="Fsflajskf"))
     await add_all_users_task
     await update_user_task
